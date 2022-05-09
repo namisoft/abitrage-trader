@@ -1,0 +1,56 @@
+{
+  "name": "arbitrage-trader",
+  "version": "1.0.0",
+  "description": "Arbitrage Trader Service",
+  "main": "index.js",
+  "scripts": {
+    "serve": "tsc && node dist/index.js",
+    "build": "tsc",
+    "start": "node --inspect=5858 -r ts-node/register ./src/index.ts",
+    "start:watch": "nodemon",
+    "start:avax-main": "tsc && NODE_ENV=dev  node dist/index.js --network=avaxmain",
+    "start:avax-test": "tsc && NODE_ENV=dev node dist/index.js --network=avaxtest",
+    "start:polygon-main": "tsc && NODE_ENV=dev  node dist/index.js --network=polygonmain",
+    "start:polygon-test": "tsc && NODE_ENV=dev node dist/index.js --network=polygontest"
+  },
+  "author": "@nami_trader",
+  "license": "ISC",
+  "dependencies": {
+    "bignumber.js": "^9.0.1",
+    "express": "^4.17.1",
+    "fs-extra": "^10.0.0",
+    "minimist": "^1.2.5",
+    "node-fetch": "^3.0.0",
+    "readline": "^1.3.0",
+    "reflect-metadata": "^0.1.13",
+    "sequential-task-queue": "^1.2.1",
+    "tsyringe": "^4.6.0",
+    "util": "^0.12.4",
+    "web3": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/fs-extra": "^9.0.13",
+    "@types/node": "^16.11.1",
+    "@types/node-fetch": "^3.0.3",
+    "@types/web3": "^1.2.2",
+    "eslint": "^8.0.1",
+    "eslint-plugin-import": "^2.25.2",
+    "nodemon": "^2.0.14",
+    "ts-node": "^10.3.0",
+    "typescript": "^4.4.4"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      ".git",
+      "node_modules"
+    ],
+    "watch": [
+      "src"
+    ],
+    "exec": "npm start",
+    "ext": "ts"
+  }
+}
