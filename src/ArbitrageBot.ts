@@ -36,7 +36,7 @@ export class ArbitrageBot {
         this._lpPairRawContract = new this._web3.eth.Contract(ABIs.LpPair as any[])
     }
 
-    async checkForTradeOpportunities(targets: ArbitrageTarget[], isValidLiquidity: (token: string, reserve: number) => boolean) {
+    async checkForTradeOpportunities(targets: ArbitrageTarget[]) {
         // firstly, extract all LP pools for calling 'get reserve' aggregation
         const pools = new Map<string, { reserve0: number, reserve1: number }>();
         const multiCallInput: { target: string, callData: string }[] = [];
@@ -63,14 +63,8 @@ export class ArbitrageBot {
         for (const item of targets) {
             const poolsRevIn = [], poolsRevOut = [];
             let inputToken = item.token;
-            //let invalidLiquidity = false;
             for (let i = 0; i < item.route.length; i++) {
                 const reserves = pools.get(item.route[i].address);
-            /*    if (!isValidLiquidity(item.route[i].token0, reserves.reserve0) ||
-                    !isValidLiquidity(item.route[i].token1, reserves.reserve1)) {
-                    invalidLiquidity = true;
-                    break;
-                }*/
                 if (item.route[i].token0 === inputToken) {
                     poolsRevIn.push(reserves.reserve0);
                     poolsRevOut.push(reserves.reserve1);
@@ -81,77 +75,31 @@ export class ArbitrageBot {
                     inputToken = item.route[i].token0;
                 }
             }
-            /*if (invalidLiquidity) {
-                //console.log(`Invalid liq: ${JSON.stringify(item.route)}`)
-                continue;
-            }*/
             let rCheck: { optimalAmtIn: number, idealProfit: number } | null = null;
             if (poolsRevIn.length === 2) {
-                rCheck = this.checkForTwoPoolsTrade(poolsRevIn, poolsRevOut);
+                rCheck = ArbitrageBot.checkForTwoPoolsTrade(poolsRevIn, poolsRevOut);
             } else if (poolsRevIn.length === 3) {
-                rCheck = this.checkForThreePoolsTrade(poolsRevIn, poolsRevOut);
+                rCheck = ArbitrageBot.checkForThreePoolsTrade(poolsRevIn, poolsRevOut);
             }
             if (rCheck && rCheck.idealProfit >= item.minProfit) {
-                result.push({
-                    token: item.token,
-                    route: item.route.map(v => v.address),
-                    optimalAmtIn: rCheck.optimalAmtIn,
-                    idealProfit: rCheck.idealProfit
-                })
+                if(ArbitrageBot.verifyK(rCheck.optimalAmtIn, poolsRevIn, poolsRevOut)){
+                    result.push({
+                        token: item.token,
+                        route: item.route.map(v => v.address),
+                        optimalAmtIn: rCheck.optimalAmtIn,
+                        idealProfit: rCheck.idealProfit
+                    })
+                } else {
+                    console.log(`K error: ${JSON.stringify({token: item.token,route: item.route.map(v => v.address)})}`)
+                }
             }
         }
 
         return {result, block: rMultiCall.blockNumber};
     }
 
-    async checkForTradeOpportunities_(token: string, paths: ExchangePath[]) {
-        const targetAddress = this._arbitrageContract.contractInfo.address;
-        const input = [];
-        for (const path of paths) {
-            if ((path as Object).hasOwnProperty("router")) {
-                // Single AMM case
-                const singleAMMPath = path as SingleAMMPath;
-                input.push({
-                    target: targetAddress,
-                    callData: this._arbitrageContract.encodeGetCyclicPoolReserves(
-                        token,
-                        singleAMMPath.intermPath,
-                        singleAMMPath.router
-                    )
-                })
-            } else {
-                // Cross AMMs path
-                const crossAMMs = path as CrossAMMsPath;
-                input.push({
-                    target: targetAddress,
-                    callData: this._arbitrageContract.encodeGetCyclicPoolReservesCrossAMMs(
-                        token,
-                        crossAMMs.intermPath,
-                        crossAMMs.routers
-                    )
-                })
-            }
-        }
 
-        // Do Multicall
-        const rCall = await this._multicallContract.aggregate(input);
-        const result: ({ optimalAmtIn: number, idealProfit: number } | null) [] = [];
-        for (let i = 0; i < paths.length; i++) {
-            const r = this._web3.eth.abi.decodeParameters(["uint256[]", "uint256[]"], rCall.outputData[i]);
-            const poolsRevIn = (r[0] as string[]).map(v => Number(v));
-            const poolsRevOut = (r[1] as string[]).map(v => Number(v));
-            if (poolsRevIn.length === 2) {
-                result.push(this.checkForTwoPoolsTrade(poolsRevIn, poolsRevOut));
-            } else if (poolsRevIn.length === 3) {
-                result.push(this.checkForThreePoolsTrade(poolsRevIn, poolsRevOut))
-            } else {
-                result.push(null)
-            }
-        }
-        return result;
-    }
-
-    private checkForTwoPoolsTrade(poolsRevIn: number[], poolsRevOut: number[]): { optimalAmtIn: number, idealProfit: number } | null {
+    private static checkForTwoPoolsTrade(poolsRevIn: number[], poolsRevOut: number[]): { optimalAmtIn: number, idealProfit: number } | null {
         if (poolsRevIn.length !== 2 || poolsRevOut.length !== 2) {
             return null
         }
@@ -170,7 +118,7 @@ export class ArbitrageBot {
         }
     }
 
-    private checkForThreePoolsTrade(poolsRevIn: number[], poolsRevOut: number[]): { optimalAmtIn: number, idealProfit: number } | null {
+    private static checkForThreePoolsTrade(poolsRevIn: number[], poolsRevOut: number[]): { optimalAmtIn: number, idealProfit: number } | null {
         if (poolsRevIn.length !== 3 || poolsRevOut.length !== 3) {
             return null
         }
@@ -188,5 +136,28 @@ export class ArbitrageBot {
         } else {
             return null
         }
+    }
+
+    private static verifyK(amountIn: number, poolsRevIn: number[], poolsRevOut: number[]): boolean {
+        const poolsLength = poolsRevIn.length;
+        let amtIn = amountIn;
+        for (let i = 0; i < poolsLength; i++) {
+            const amtOut = ArbitrageBot.getAmountOut(amtIn, poolsRevIn[i], poolsRevOut[i]);
+            const poolRevInAfter = poolsRevIn[i] + AMOUNT_WITH_FEE_BIPS * amtIn / AMOUNT_MAX_BIPS;
+            const poolRevOutAfter = poolsRevOut[i] - amtOut;
+            if (poolRevInAfter * poolRevOutAfter < poolsRevIn[i] * poolsRevOut[i]) {
+                return false;
+            }
+            amtIn = amtOut;
+        }
+        return true;
+    }
+
+    // calculation formula is from UniswapV2
+    private static getAmountOut(amountIn: number, poolRevIn: number, poolRevOut: number): number {
+        const amountInWithFee = amountIn * AMOUNT_WITH_FEE_BIPS;
+        const numerator = amountInWithFee * poolRevOut;
+        const denominator = poolRevIn * AMOUNT_MAX_BIPS + amountInWithFee;
+        return numerator / denominator;
     }
 }

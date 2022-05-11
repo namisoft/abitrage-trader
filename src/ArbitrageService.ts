@@ -4,7 +4,6 @@ import Web3 from "web3";
 import {ArbitrageBot, ArbitrageTarget} from "./ArbitrageBot";
 import {SequentialTaskQueue} from "sequential-task-queue";
 import {AppConfig} from "./config/app-config";
-import {formatNumber} from "./common/utils";
 
 const path = require("path");
 const fs = require("fs");
@@ -29,14 +28,7 @@ export class ArbitrageService {
         this._scanTradeOpportunitiesTimer = setInterval(
             () => {
                 return this._scanTradeOpportunitiesTaskQueue.push(() => {
-                        return this._arbitrageBot.checkForTradeOpportunities(
-                            this._arbitrageInput,
-                            (token, reserve) => {
-                                if (AppConfig.MIN_REQUIRED_LIQUIDITY_AMOUNT.has(token))
-                                    return true || (reserve >= AppConfig.MIN_REQUIRED_LIQUIDITY_AMOUNT.get(token))
-                                else
-                                    return true
-                            }
+                        return this._arbitrageBot.checkForTradeOpportunities(this._arbitrageInput
                         )
                             .then(r => {
                                 if (r.result.length > 0) {
@@ -73,7 +65,7 @@ export class ArbitrageService {
 
         for (const arbitrageInParam of AppConfig.ArbitrageSeekingParams) {
             const token = arbitrageInParam.token.toLowerCase();
-            const routes = this.buildCyclicRoutes(token, 3, pools);
+            const routes = ArbitrageService.buildCyclicRoutes(token, 3, pools);
             //console.log(JSON.stringify(routes));
             for (const route of routes) {
                 const routeWithInfo = route.map(address => {
@@ -87,51 +79,27 @@ export class ArbitrageService {
     }
 
 
-    private buildCyclicRoutes(token: string, maxPathDeep: number, pools: Map<string, LpPoolInfo>): string[][] {
+    private static buildCyclicRoutes(token: string, maxPathDeep: number, pools: Map<string, LpPoolInfo>): string[][] {
         const ret: string[][] = [];
         let pathDeep = 1;
-        let currentRoutes = this.findNextRoutes(token, [], pools);
+        let currentRoutes = ArbitrageService.findNextRoutes(token, [], pools);
         while (pathDeep <= maxPathDeep) {
             const tmpPaths = [];
             for (const route of currentRoutes) {
                 if (pathDeep >= 2 && route.lastToken === token) {
                     ret.push(route.path);
                 } else {
-                    tmpPaths.push(...this.findNextRoutes(route.lastToken, route.path, pools))
+                    tmpPaths.push(...ArbitrageService.findNextRoutes(route.lastToken, route.path, pools))
                 }
             }
             currentRoutes = tmpPaths;
             pathDeep++;
         }
 
-        //console.log(ret);
-
-        // transform route from format `pool0 -> pool1 ->...` to `token0 -> token1 -> token2...`
-        /*       const transformRoute = (route: string[]) => {
-                   const result = [];
-                   let lastToken = token;
-                   for (let i = 0; i < route.length; i++) {
-                       const pool = pools.get(route[i]);
-                       if (pool.token0 === lastToken) {
-                           result.push(pool.token0);
-                           lastToken = pool.token1;
-                       } else {
-                           result.push(pool.token1);
-                           lastToken = pool.token0;
-                       }
-
-                   }
-                   // drop the first element (that is `token`) when returning
-                   // console.log(result);
-                   return result.slice(1);
-               }
-
-               return ret.map(transformRoute);*/
-
         return ret;
     }
 
-    private findNextRoutes(token: string, pathTo: string[], pools: Map<string, LpPoolInfo>): { path: string[], lastToken: string }[] {
+    private static findNextRoutes(token: string, pathTo: string[], pools: Map<string, LpPoolInfo>): { path: string[], lastToken: string }[] {
         const ret: { path: string[], lastToken: string }[] = [];
         for (const poolId of pools.keys()) {
             if (!pathTo.includes(poolId)) {
