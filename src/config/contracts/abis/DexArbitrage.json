@@ -31,61 +31,29 @@
         "type": "address"
       },
       {
-        "internalType": "address[]",
-        "name": "_intermPath",
-        "type": "address[]"
-      },
-      {
         "internalType": "address",
-        "name": "_router",
+        "name": "_spender",
         "type": "address"
-      }
-    ],
-    "name": "getCyclicPoolReserves",
-    "outputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "poolsRevIn",
-        "type": "uint256[]"
       },
       {
-        "internalType": "uint256[]",
-        "name": "poolsRevOut",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "name": "approveERC20",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_token",
-        "type": "address"
-      },
-      {
-        "internalType": "address[]",
-        "name": "_intermPath",
-        "type": "address[]"
-      },
-      {
-        "internalType": "address[]",
-        "name": "_routers",
-        "type": "address[]"
-      }
-    ],
-    "name": "getCyclicPoolReservesCrossAMMs",
+    "inputs": [],
+    "name": "isTestMode",
     "outputs": [
       {
-        "internalType": "uint256[]",
-        "name": "poolsRevIn",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "poolsRevOut",
-        "type": "uint256[]"
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -105,8 +73,130 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_dest",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "recoverERC20",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "_isTestMode",
+        "type": "bool"
+      }
+    ],
+    "name": "setTestMode",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_pairsRoute",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_routers",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_minProfit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_spotOutBlock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxBlocksOffset",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeOnMultiRouters",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_pairsRoute",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_router",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_minProfit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_spotOutBlock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxBlocksOffset",
+        "type": "uint256"
+      }
+    ],
+    "name": "tradeOnSingleRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

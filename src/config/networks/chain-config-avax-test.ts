@@ -1,5 +1,5 @@
-import {ChainConfig} from "./chain-config";
-import {ABIs} from "./contracts";
+import {ChainConfig} from "../chain-config";
+import {ABIs} from "../contracts";
 
 export const ChainConfigAvaxTest: ChainConfig = {
     chainId: 43113,

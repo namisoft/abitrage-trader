@@ -1,5 +1,5 @@
-import {ChainConfig} from "./chain-config";
-import {ABIs} from "./contracts";
+import {ChainConfig} from "../chain-config";
+import {ABIs} from "../contracts";
 
 export const ChainConfigPolygonMain: ChainConfig = {
     chainId: 137,
@@ -8,7 +8,7 @@ export const ChainConfigPolygonMain: ChainConfig = {
     explorerUrl: "https://polygonscan.com",
     contracts: {
         DexArbitrage: {
-            address: "0x22e3f6F61Db6F0566b2458E0Ee24Cd18b74b5Dc3",
+            address: "0xD81E6B674bCF8Ce318cb98cDa0dadd23E0206D9e",
             abi: ABIs.DexArbitrage
         },
         Multicall: {

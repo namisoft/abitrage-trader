@@ -1,3 +1,7 @@
 dist
 .idea
 node_modules
+/data/__accounts/*
+/tools/output/__accounts/*
+/contracts/artifacts/*
+/logs/*

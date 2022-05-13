@@ -2,6 +2,7 @@ import {ServiceRunner} from "./ServiceRunner";
 import {container, singleton} from "tsyringe";
 import Web3 from "web3";
 import {ArbitrageService} from "./ArbitrageService";
+import {BotManager} from "./BotManager";
 
 const argv = require('minimist')(process.argv.slice(2));
 const fs = require('fs-extra');
@@ -9,24 +10,11 @@ const readline = require('readline');
 
 @singleton()
 export class RunnerProd implements ServiceRunner {
-    constructor(private arbitrageService: ArbitrageService) {
+    constructor(private arbitrageService: ArbitrageService,
+                private botManager: BotManager) {
     }
 
     run() {
-        // firstly, read private key from commandline
-        const privateKey = argv['pk'];
-        if (privateKey) {
-            // start bot
-            this._startBot(privateKey);
-            return;
-        }
-        // otherwise, read json keystore file from commandline
-        const jksFile = argv['jks'];
-        if (!jksFile) {
-            console.error("Private key or Keystore file required");
-            process.exit(1);
-        }
-        const keystore = fs.readJSONSync(jksFile);
 
         const rl = readline.createInterface({
             input: process.stdin,
@@ -41,10 +29,8 @@ export class RunnerProd implements ServiceRunner {
         rl.question('Keystore password: ', function (password) {
             rl.close();
             try {
-                const web3: Web3 = container.resolve("Web3");
-                const decryptedKey = web3.eth.accounts.decrypt(keystore, password);
-                // start bot
-                self._startBot(decryptedKey.privateKey);
+                // start service
+                self.startService(password);
             } catch (e) {
                 console.error(`\n${e.toString()}`);
                 process.exit(1);
@@ -63,11 +49,14 @@ export class RunnerProd implements ServiceRunner {
 
     }
 
-    private _startBot(privateKey: string) {
+    private startService(privateKey: string) {
         try {
-            this.arbitrageService.scanForPotentialTrades();
+            if(this.botManager.loadConfiguredBots(privateKey)) {
+                this.arbitrageService.loadInputData();
+                this.arbitrageService.scanForPotentialTrades();
+            }
         } catch (e) {
-            console.error(`Cannot start bot: ${e.toString()}`);
+            console.error(`Cannot start service: ${e.toString()}`);
             process.exit(1);
         }
     }

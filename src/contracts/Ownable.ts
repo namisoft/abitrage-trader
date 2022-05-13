@@ -1,4 +1,4 @@
-import {ContractBase, SendOptions} from "../common/contract-base";
+import {ContractBase} from "../common/contract-base";
 
 export class Ownable extends ContractBase {
     getOwner(): Promise<string> {
@@ -7,7 +7,7 @@ export class Ownable extends ContractBase {
             .then(r => r["0"].valueOf() as string)
     }
 
-    changeOwner(newOwner: string, options?: SendOptions) {
+    changeOwner(newOwner: string, options?: any) {
         return this.sendTx("changeOwner", [newOwner], options)
     }
 }

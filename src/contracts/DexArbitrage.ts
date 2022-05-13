@@ -1,9 +1,7 @@
 import {Ownable} from "./Ownable";
-import {SendOptions} from "../common/contract-base";
 import {ChainConfig} from "../config/chain-config";
 import {container} from "tsyringe";
 import {MultiCall} from "./MultiCall";
-import {to32BytesHex} from "../common/utils";
 
 export class DexArbitrage extends Ownable {
     private static _instance?: DexArbitrage;
@@ -98,43 +96,21 @@ export class DexArbitrage extends Ownable {
             })
     }
 
-    // each secret hash must be in hex string number form
-    commit(secretHashes: string[], options?: SendOptions) {
-        return this.sendTx("commit", [secretHashes], options)
+    tradeOnSingleRoute(token: string,
+                       amount: number,
+                       pairsRoute: string[],
+                       router: string,
+                       minProfit: number,
+                       spotOutBlock: number,
+                       maxBlocksOffset: number,
+                       sendOptions?: any) {
+        // amount number process
+        const appliedAmt = `${Math.trunc(amount)}`;
+        const appliedMinProfit = `${Math.trunc(minProfit)}`;
+        return this.sendTx(
+            "tradeOnSingleRouter",
+            [token, appliedAmt, pairsRoute, router, appliedMinProfit, spotOutBlock, maxBlocksOffset],
+            sendOptions)
     }
 
-    // secret & secret hash must be in hex string number form
-    reveal(hash: string, secret: string, options?: SendOptions) {
-        return this.sendTx("reveal", [hash, secret], options)
-    }
-
-
-    readonly pastEvents = ((self: DexArbitrage) => {
-        return {
-            secretHashAssigned: (fromBlock: number, toBlock: number) =>
-                new Promise<DexArbitrageEventData.SecretHashAssigned[]>((resolve, reject) => {
-                    self.underlyingContract
-                        .getPastEvents("SecretHashAssigned", {
-                            fromBlock: fromBlock,
-                            toBlock: toBlock
-                        })
-                        .then(events => {
-                            const ret: DexArbitrageEventData.SecretHashAssigned[] = [];
-                            for (const evt of events) {
-                                const secretHash = to32BytesHex(evt.returnValues["secretHash"]);
-                                const secretIndex = Number(evt.returnValues["secretIndex"]);
-                                ret.push({secretHash: secretHash, secretIndex: secretIndex, block: evt.blockNumber})
-                            }
-                            resolve(ret);
-                        })
-                        .catch(err => {
-                            reject(err);
-                        })
-                }),
-        }
-    })(this)
-}
-
-export namespace DexArbitrageEventData {
-    export type SecretHashAssigned = { secretHash: string, secretIndex: number, block: number }
 }
