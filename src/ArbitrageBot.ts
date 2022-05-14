@@ -5,6 +5,7 @@ import {DexArbitrage} from "./contracts/DexArbitrage";
 
 const DEFAULT_GAS_LIMIT = 1000000;
 const DEFAULT_GAS_PRICE = 100000000000;
+const DEFAULT_MAX_PRIORITY_FEE_PER_GAS = 50000000000;    // 50 GWEI (TODO: for Polygon)
 
 export class ArbitrageBot {
     private readonly _web3: Web3;
@@ -43,8 +44,10 @@ export class ArbitrageBot {
                 .tradeOnSingleRoute(token, amount, pairsRoute, router, minProfit, spotOutBlock, maxBlocksOffset,
                     {
                         from: this.address,
+                        //type: 2,                    // EIP-1559
                         gas: DEFAULT_GAS_LIMIT,
-                        gasPrice: DEFAULT_GAS_PRICE
+                        gasPrice: DEFAULT_GAS_PRICE,
+                        maxPriorityFeePerGas: DEFAULT_MAX_PRIORITY_FEE_PER_GAS
                     })
                 .then(r => {
                     if (r.success) {
