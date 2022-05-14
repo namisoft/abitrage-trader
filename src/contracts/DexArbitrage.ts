@@ -105,8 +105,8 @@ export class DexArbitrage extends Ownable {
                        maxBlocksOffset: number,
                        sendOptions?: any) {
         // amount number process
-        const appliedAmt = `${Math.trunc(amount)}`;
-        const appliedMinProfit = `${Math.trunc(minProfit)}`;
+        const appliedAmt = BigInt(Math.trunc(amount)).toString();
+        const appliedMinProfit = BigInt(Math.trunc(minProfit)).toString();
         return this.sendTx(
             "tradeOnSingleRouter",
             [token, appliedAmt, pairsRoute, router, appliedMinProfit, spotOutBlock, maxBlocksOffset],
