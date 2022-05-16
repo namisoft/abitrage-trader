@@ -7,6 +7,8 @@ export const AvaxProfile: ArbitrageProfile = {
         {name: "ElkDex", pairsDataFile: "ELK_pairs.json", router: "0x9E4AAbd2B3E60Ee1322E94307d0776F2c8e6CFbb"},
         {name: "SushiSwap", pairsDataFile: "SLP_pairs.json", router: "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"}],
 
+    MaxBlocksOffsetFromSpotOut: 1,
+
     SeekingParams: [
         {token: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", minProfit: 0.02 * 1e18},  // WAVAX
         {token: "0xba7deebbfc5fa1100fb055a87773e1e99cd3507a", minProfit: 1e18},         // DAI.e
@@ -18,4 +20,10 @@ export const AvaxProfile: ArbitrageProfile = {
     ExcludedTokens: [],
 
     Bots: [],
+
+    TxSendDefaultOptions: {
+        gasLimit: 0,
+        gasPrice: 0,
+        maxPriorityFeePerGas: 0
+    }
 }

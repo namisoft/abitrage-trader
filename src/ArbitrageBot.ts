@@ -3,24 +3,23 @@ import {container} from "tsyringe";
 import {BaseResult} from "./common/base-result";
 import {DexArbitrage} from "./contracts/DexArbitrage";
 
-const DEFAULT_GAS_LIMIT = 1000000;
-const DEFAULT_GAS_PRICE = 100000000000;
-const DEFAULT_MAX_PRIORITY_FEE_PER_GAS = 50000000000;    // 50 GWEI (TODO: for Polygon)
-
 export class ArbitrageBot {
     private readonly _web3: Web3;
     private readonly _dexArbitrage: DexArbitrage;
+    private readonly _txSendOptions: any;
 
     readonly address: string;
 
-    constructor(private readonly _privateKey: string,
-                private readonly _supportedTokens: string[]) {
+    constructor(_privateKey: string,
+                private readonly _supportedTokens: string[],
+                _txSendDefaultOptions: any) {
         this._web3 = container.resolve("Web3");
         const account = this._web3.eth.accounts.privateKeyToAccount(_privateKey);
         this.address = account.address.toLowerCase();
-        console.log(`Bot loaded: ${this.address}`);
         this._web3.eth.accounts.wallet.add(_privateKey);
         this._dexArbitrage = DexArbitrage.getInstance();
+        this._txSendOptions = {from: this.address, ..._txSendDefaultOptions};
+        console.log(`Bot loaded: ${this.address}`);
     }
 
     isSupportedToken(token: string): boolean {
@@ -32,40 +31,35 @@ export class ArbitrageBot {
     }
 
 
-    tradeOnSingleRouter = (token: string,
+    tradeOnSingleRouter = (tradeId: string,
+                           token: string,
                            amount: number,
                            pairsRoute: string[],
                            router: string,
                            minProfit: number,
-                           spotOutBlock: number,
-                           maxBlocksOffset: number) =>
+                           validToBlockNumber: number) =>
         new Promise<BaseResult<string, { txProcessingError?: boolean, txSendingError?: boolean }>>(resolve => {
             return this._dexArbitrage
-                .tradeOnSingleRoute(token, amount, pairsRoute, router, minProfit, spotOutBlock, maxBlocksOffset,
-                    {
-                        from: this.address,
-                        //type: 2,                    // EIP-1559
-                        gas: DEFAULT_GAS_LIMIT,
-                        gasPrice: DEFAULT_GAS_PRICE,
-                        maxPriorityFeePerGas: DEFAULT_MAX_PRIORITY_FEE_PER_GAS
-                    })
+                .tradeOnSingleRoute(token, amount, pairsRoute, router, minProfit, validToBlockNumber,
+                    this._txSendOptions
+                )
                 .then(r => {
                     if (r.success) {
                         // Tx success
-                        console.log(`tradeOnSingleRouter success: tx=${r.receipt.transactionHash}`);
+                        console.log(`tradeOnSingleRouter ${tradeId} success: block= ${r.receipt.blockNumber}, tx=${r.receipt.transactionHash}`);
                         resolve({data: r.receipt.transactionHash})
                     } else if (r.receipt) {
                         // Tx processing failed
-                        console.error(`tradeOnSingleRouter failed in tx processing: block=${r.receipt.blockNumber}, tx=${r.receipt.transactionHash}`);
+                        console.error(`tradeOnSingleRouter ${tradeId} failed in tx processing: block=${r.receipt.blockNumber}, tx=${r.receipt.transactionHash}`);
                         resolve({error: {txProcessingError: true}})
                     } else {
                         // Tx sending failed
-                        console.error(`tradeOnSingleRouter failed in tx sending`);
+                        console.error(`tradeOnSingleRouter ${tradeId} failed in tx sending`);
                         resolve({error: {txSendingError: true}})
                     }
                 })
                 .catch(err => {
-                    console.error(`tradeOnSingleRouter failed with exception: ${err.toString()}`);
+                    console.error(`tradeOnSingleRouter ${tradeId} failed with exception: ${err.toString()}`);
                     resolve({error: {txSendingError: true}})
                 })
         })

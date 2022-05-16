@@ -10,6 +10,8 @@ export const PolygonProfile: ArbitrageProfile = {
         {name: "QuickSwap", pairsDataFile: "Quick_pairs.json", router: "0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff"}
     ],
 
+    MaxBlocksOffsetFromSpotOut: 1,
+
     SeekingParams: [
         {token: KNOWN_TOKENS.WMATIC, minProfit: 0.05 * 1e18}
     ],
@@ -24,4 +26,10 @@ export const PolygonProfile: ArbitrageProfile = {
     Bots: [
         {jksFile: "/0x1bcae667ad66c4f9d04971f84d062546ca5fa127.json", supportedTokens: [KNOWN_TOKENS.WMATIC]}
     ],
+
+    TxSendDefaultOptions: {
+        gasLimit: 1000000,
+        gasPrice: 100000000000,
+        maxPriorityFeePerGas: 50000000000        // 50 GWEI
+    }
 }

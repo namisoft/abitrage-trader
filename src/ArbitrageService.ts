@@ -123,7 +123,9 @@ export class ArbitrageService {
             }
         }
 
-        console.log(`Promising trades: block=${checkResult.block}, ${JSON.stringify(pickyTrades)}`);
+        //console.log(`Promising trades: block=${checkResult.block}, ${JSON.stringify(pickyTrades)}`);
+
+        console.log(`Promising trades: ${pickyTrades.length}, block=${checkResult.block}`);
 
         // we only take the best trades depending on the number of available bots for this input token.
         const availableBots = this.botManager.getAvailableBotsFor(token);
@@ -131,7 +133,8 @@ export class ArbitrageService {
         for (let i = 0; i < tradesNum; i++) {
             const bot = availableBots[i];
             const trade = pickyTrades[i];
-            this.botManager.assignToTask(bot.address, `${checkResult.block}#${i}`);
+            const tradeId = `${checkResult.block}#${i}`;
+            this.botManager.assignToTask(bot.address, tradeId);
             let isSingleRouterTrade = true;
             let router0 = trade.route[0].router;
             for (let k = 1; k < trade.route.length; k++) {
@@ -143,19 +146,22 @@ export class ArbitrageService {
             if (isSingleRouterTrade) {
                 // construct input params, then call `single router trade`
                 const route = trade.route.map(v => v.pair);
+                console.log(`Assign bot ${bot.address} to single-router trade ${tradeId}: ${JSON.stringify({
+                    token, optimalAmtIn: trade.optimalAmtIn, idealProfit: trade.idealProfit, route, router: router0 
+                })}`);
                 bot.tradeOnSingleRouter(
+                    tradeId,
                     token,
                     trade.optimalAmtIn,
                     route,
                     router0,
-                    trade.idealProfit,
-                    checkResult.block,
-                    1
+                    tradesConfig.minProfit,
+                    checkResult.block + this._arbitrageProfile.MaxBlocksOffsetFromSpotOut,
                 ).then(r => {
-                    console.log(`Trade TX result: ${JSON.stringify(r)}`);
+                    console.log(`Trade ${tradeId} result: ${JSON.stringify(r)}`);
                     this.botManager.releaseFromTask(bot.address);
                 }).catch(e => {
-                    console.error(`Trade TX exception: ${JSON.stringify(e)}`);
+                    console.error(`Trade ${tradeId} exception: ${JSON.stringify(e)}`);
                     this.botManager.releaseFromTask(bot.address);
                 })
             } else {

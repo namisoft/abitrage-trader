@@ -9,12 +9,14 @@ const fs = require('fs-extra');
 @singleton()
 export class BotManager {
     private readonly _web3: Web3;
+    private readonly _arbitrageProfile: ArbitrageProfile;
     private readonly _bots = new Map<string, ArbitrageBot>();
     private readonly _tokenSupportedBots = new Map<string, string[]>();
     private readonly _taskAssignedBots = new Map<string, string>();
 
     constructor() {
         this._web3 = container.resolve("Web3");
+        this._arbitrageProfile = container.resolve("ArbitrageProfile");
     }
 
     addBot(bot: ArbitrageBot) {
@@ -80,7 +82,8 @@ export class BotManager {
                 const privateKey = this._web3.eth.accounts.decrypt(jks, jksPassword).privateKey
                 this.addBot(new ArbitrageBot(
                     privateKey,
-                    bot.supportedTokens.map(v => v.toLowerCase())
+                    bot.supportedTokens.map(v => v.toLowerCase()),
+                    this._arbitrageProfile.TxSendDefaultOptions
                 ))
             }
             return true;

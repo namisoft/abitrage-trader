@@ -27,6 +27,7 @@ export class RunnerProd implements ServiceRunner {
 
         // let user enter the password of keystore file
         rl.question('Keystore password: ', function (password) {
+            console.log("Keystore password entered!");
             rl.close();
             try {
                 // start service
