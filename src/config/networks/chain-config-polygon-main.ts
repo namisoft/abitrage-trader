@@ -8,7 +8,7 @@ export const ChainConfigPolygonMain: ChainConfig = {
     explorerUrl: "https://polygonscan.com",
     contracts: {
         DexArbitrage: {
-            address: "0xD81E6B674bCF8Ce318cb98cDa0dadd23E0206D9e",
+            address: "0x903Ca14cF238eeB6199DC188c4E79128093Cc2eD",
             abi: ABIs.DexArbitrage
         },
         Multicall: {

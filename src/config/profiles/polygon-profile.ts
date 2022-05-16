@@ -10,17 +10,18 @@ export const PolygonProfile: ArbitrageProfile = {
         {name: "QuickSwap", pairsDataFile: "Quick_pairs.json", router: "0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff"}
     ],
 
-    MaxBlocksOffsetFromSpotOut: 1,
+    MaxBlocksOffsetFromSpotOut: 2,
 
     SeekingParams: [
-        {token: KNOWN_TOKENS.WMATIC, minProfit: 0.05 * 1e18}
+        {token: KNOWN_TOKENS.WMATIC, minProfit: 0.02 * 1e18}
     ],
 
     ExcludedPairs: [],
 
     ExcludedTokens: [
         "0x0731D0C0D123382C163AAe78A09390cAd2FFC941".toLocaleLowerCase(),    // INK
-        "0x61dAECaB65EE2A1D5b6032df030f3fAA3d116Aa7".toLocaleLowerCase()     // DMAGIC
+        "0x61dAECaB65EE2A1D5b6032df030f3fAA3d116Aa7".toLocaleLowerCase(),    // DMAGIC
+        "0xf1428850f92B87e629c6f3A3B75BffBC496F7Ba6".toLowerCase()           //GEO$
     ],
 
     Bots: [

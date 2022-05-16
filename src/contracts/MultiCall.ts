@@ -16,7 +16,7 @@ export class MultiCall extends ContractBase {
             return ret
         } else {
             return {
-                blockNumber: ret.data["blockNumber"],
+                blockNumber: Number(ret.data["blockNumber"]),
                 outputData: ret.data["returnData"] as string[]
             };
         }

@@ -7,6 +7,7 @@ import {ArbitrageProfile} from "./config/arbitrage-profile";
 import {ArbitrageDetector, Route, TokenTradesConfig, TradeOpportunity} from "./ArbitrageDetector";
 import {BotManager} from "./BotManager";
 import {ArbitrageBot} from "./ArbitrageBot";
+import BN from "bignumber.js";
 
 const path = require("path");
 const fs = require("fs");
@@ -80,7 +81,7 @@ export class ArbitrageService {
             this._tradesConfig.push({
                 token,
                 routes: routesWithInfo,
-                minProfit: arbitrageInParam.minProfit
+                minProfit: new BN(arbitrageInParam.minProfit)
             });
             this._botsForTokens.set(token, this.botManager.getTokenSupportedBots(token));
         }
@@ -104,7 +105,7 @@ export class ArbitrageService {
         // update last checked block
         this._lastCheckedBlocks.set(token, checkResult.block);
         // sort trades from max to min ideal profit
-        const potentialTrades = checkResult.trades.sort((a, b) => b.idealProfit - a.idealProfit);
+        const potentialTrades = checkResult.trades.sort((a, b) => b.idealProfit.minus(a.idealProfit).toNumber());
         // note that we will ignore the duplication trades those
         // have the same pairs of route but in a difference order!
         const pickyTrades: TradeOpportunity[] = [];
@@ -125,7 +126,7 @@ export class ArbitrageService {
 
         //console.log(`Promising trades: block=${checkResult.block}, ${JSON.stringify(pickyTrades)}`);
 
-        console.log(`Promising trades: ${pickyTrades.length}, block=${checkResult.block}`);
+        console.log(`Promising trades for ${token}: ${pickyTrades.length}, block=${checkResult.block}`);
 
         // we only take the best trades depending on the number of available bots for this input token.
         const availableBots = this.botManager.getAvailableBotsFor(token);
@@ -147,7 +148,8 @@ export class ArbitrageService {
                 // construct input params, then call `single router trade`
                 const route = trade.route.map(v => v.pair);
                 console.log(`Assign bot ${bot.address} to single-router trade ${tradeId}: ${JSON.stringify({
-                    token, optimalAmtIn: trade.optimalAmtIn, idealProfit: trade.idealProfit, route, router: router0 
+                    token, optimalAmtIn: trade.optimalAmtIn.toString(10), 
+                    idealProfit: trade.idealProfit.toString(10), route, router: router0 
                 })}`);
                 bot.tradeOnSingleRouter(
                     tradeId,

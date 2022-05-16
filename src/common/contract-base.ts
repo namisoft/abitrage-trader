@@ -26,15 +26,14 @@ export abstract class ContractBase {
 
     protected sendTx(methodName: string, params: any[], options?: any) {
         const appliedOptions = options ? options : {from: this.defaultAccount, gas: this.defaultGas}
-        const self = this;
         return new Promise<{ success: boolean, receipt?: TransactionReceipt }>(((resolve, reject) => {
             try {
                 this.underlyingContract.methods[methodName]
                     .apply(null, params)
                     .send(appliedOptions)
                     .on('transactionHash', txHash => {
-                        console.log(`Invoking method ${methodName}: tx sent successfully`);
-                        console.log(`  TxHash: ${JSON.stringify(txHash)}`);
+                        console.log(`Invoking method ${methodName}: tx sent OK... ${txHash}`);
+                        //console.log(`  TxHash: ${JSON.stringify(txHash)}`);
                     })
                     .on('receipt', receipt => {
                         console.log(`Method ${methodName} invoked successfully: tx=${receipt.transactionHash}, block = ${receipt.blockNumber}, gasUsed=${receipt.gasUsed}`);

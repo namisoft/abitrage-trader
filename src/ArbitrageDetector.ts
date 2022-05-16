@@ -4,6 +4,7 @@ import Web3 from "web3";
 import {container} from "tsyringe";
 import {Contract} from "web3-eth-contract";
 import {ABIs} from "./config/contracts";
+import BN from "bignumber.js";
 
 type Pair = { address: string, token0: string, token1: string };
 
@@ -12,27 +13,31 @@ export type Route = (Pair & { router: string })[];
 export type TokenTradesConfig = {
     token: string,      // token to trade from
     routes: Route[],    // swapping routes
-    minProfit: number   // in `wei` unit
+    minProfit: BN   // in `wei` unit
 }
 
 export type TradeOpportunity = {
     route: { pair: string, router: string }[],
-    optimalAmtIn: number,
-    idealProfit: number
+    optimalAmtIn: BN,
+    idealProfit: BN
 }
 
-const AMOUNT_MAX_BIPS = 1000;
-const AMOUNT_WITH_FEE_BIPS = 997;
-const AMOUNT_MAX_BIPS_POW2 = AMOUNT_MAX_BIPS * AMOUNT_MAX_BIPS;
-const AMOUNT_WITH_FEE_BIPS_POW2 = AMOUNT_WITH_FEE_BIPS * AMOUNT_WITH_FEE_BIPS;
-const AMOUNT_MAX_BIPS_POW3 = AMOUNT_MAX_BIPS_POW2 * AMOUNT_MAX_BIPS;
-const AMOUNT_WITH_FEE_BIPS_POW3 = AMOUNT_WITH_FEE_BIPS_POW2 * AMOUNT_WITH_FEE_BIPS;
+const BN_ZERO = new BN(0);
+const BN_AMOUNT_MAX_BIPS = new BN(1000);
+const BN_AMOUNT_WITH_FEE_BIPS = new BN(997);
+const BN_AMOUNT_MAX_BIPS_POW2 = BN_AMOUNT_MAX_BIPS.times(BN_AMOUNT_MAX_BIPS);
+const BN_AMOUNT_WITH_FEE_BIPS_POW2 = BN_AMOUNT_WITH_FEE_BIPS.times(BN_AMOUNT_WITH_FEE_BIPS);
+const BN_AMOUNT_MAX_BIPS_POW3 = BN_AMOUNT_MAX_BIPS_POW2.times(BN_AMOUNT_MAX_BIPS);
+const BN_AMOUNT_WITH_FEE_BIPS_POW3 = BN_AMOUNT_WITH_FEE_BIPS_POW2.times(BN_AMOUNT_WITH_FEE_BIPS);
+
+BN.config({DECIMAL_PLACES: 3, POW_PRECISION: 2})
 
 export class ArbitrageDetector {
     private readonly _web3: Web3;
     private readonly _arbitrageContract: DexArbitrage;
     private readonly _multicallContract: MultiCall;
     private readonly _lpPairRawContract: Contract;
+    private readonly _kErrorPairs = new Map<string, string[]>();
 
     constructor() {
         this._web3 = container.resolve("Web3");
@@ -44,13 +49,13 @@ export class ArbitrageDetector {
     async checkForTradeOpportunities(tradesConfig: TokenTradesConfig):
         Promise<{ trades: TradeOpportunity[], block: number }> {
         // firstly, extract all LP pools for calling 'get reserve' aggregation
-        const pools = new Map<string, { reserve0: number, reserve1: number }>();
+        const pools = new Map<string, { reserve0: BN, reserve1: BN }>();
         const multiCallInput: { target: string, callData: string }[] = [];
         const getReservesEncodedABI = this._lpPairRawContract.methods["getReserves"]().encodeABI();
         for (const route of tradesConfig.routes) {
             for (const pair of route) {
                 if (!pools.has(pair.address)) {
-                    pools.set(pair.address, {reserve0: 0, reserve1: 0});
+                    pools.set(pair.address, {reserve0: BN_ZERO, reserve1: BN_ZERO});
                     multiCallInput.push({target: pair.address, callData: getReservesEncodedABI})
                 }
             }
@@ -58,20 +63,21 @@ export class ArbitrageDetector {
         //console.log(JSON.stringify(multiCallInput));
         const rMultiCall = await this._multicallContract.aggregate(multiCallInput);
         //console.log(JSON.stringify(rMultiCall));
-        if("error" in rMultiCall){
+        if ("error" in rMultiCall) {
             console.error(`Multicall error: ${rMultiCall.error}`);
             return {trades: [], block: 0};
         }
         for (let i = 0; i < multiCallInput.length; i++) {
             const r = this._web3.eth.abi.decodeParameters(["uint256", "uint256"], rMultiCall.outputData[i]);
-            const reserve0 = r[0] as number, reserve1 = r[1] as number;
+            const reserve0 = new BN(r[0]), reserve1 = new BN(r[1]);
+            //console.log(`${multiCallInput[i].target}, r0: ${reserve0.toString()}, r1: ${reserve1.toString()}`)
             pools.set(multiCallInput[i].target, {reserve0, reserve1})
         }
 
         // secondly, find trade opportunities based on pool reserves
         const result = [];
         for (const route of tradesConfig.routes) {
-            const poolsRevIn = [], poolsRevOut = [];
+            const poolsRevIn: BN[] = [], poolsRevOut: BN[] = [];
             let inputToken = tradesConfig.token;
             for (let i = 0; i < route.length; i++) {
                 const reserves = pools.get(route[i].address);
@@ -85,13 +91,13 @@ export class ArbitrageDetector {
                     inputToken = route[i].token0;
                 }
             }
-            let rCheck: { optimalAmtIn: number, idealProfit: number } | null = null;
+            let rCheck: { optimalAmtIn: BN, idealProfit: BN } | null = null;
             if (poolsRevIn.length === 2) {
                 rCheck = ArbitrageDetector.checkForTwoPoolsTrade(poolsRevIn, poolsRevOut);
             } else if (poolsRevIn.length === 3) {
                 rCheck = ArbitrageDetector.checkForThreePoolsTrade(poolsRevIn, poolsRevOut);
             }
-            if (rCheck && rCheck.idealProfit >= tradesConfig.minProfit) {
+            if (rCheck && rCheck.idealProfit.gte(tradesConfig.minProfit)) {
                 if (ArbitrageDetector.verifyK(rCheck.optimalAmtIn, poolsRevIn, poolsRevOut)) {
                     result.push({
                         route: route.map(v => {
@@ -101,10 +107,23 @@ export class ArbitrageDetector {
                         idealProfit: rCheck.idealProfit
                     })
                 } else {
-                    console.log(`K error: ${JSON.stringify({
-                        token: tradesConfig.token,
-                        route: route.map(v => v.address)
-                    })}`)
+                    // K error case: just log
+                    // wrap logging activity in an async block to avoid process blocking
+                    (async () => {
+                        const pairs = route.map(v => v.address);
+                        let tmpId = new BN(0);
+                        for(const p of pairs) {
+                            tmpId = tmpId.plus(new BN(p.toLowerCase()));
+                        }
+                        const kErrorRouteId = tmpId.toString(32);
+                        if(!this._kErrorPairs.has(kErrorRouteId)){
+                            this._kErrorPairs.set(kErrorRouteId, pairs);
+                            console.log(`K error: ${JSON.stringify({
+                                token: tradesConfig.token,
+                                route: pairs
+                            })}`)
+                        }
+                    })().then().catch()
                 }
             }
         }
@@ -113,55 +132,57 @@ export class ArbitrageDetector {
     }
 
 
-    private static checkForTwoPoolsTrade(poolsRevIn: number[], poolsRevOut: number[])
-        : { optimalAmtIn: number, idealProfit: number } | null {
+    private static checkForTwoPoolsTrade(poolsRevIn: BN[], poolsRevOut: BN[])
+        : { optimalAmtIn: BN, idealProfit: BN } | null {
         if (poolsRevIn.length !== 2 || poolsRevOut.length !== 2) {
             return null
         }
-        const a = poolsRevOut[0] * poolsRevOut[1];
-        const b = poolsRevIn[0] * poolsRevIn[1] * AMOUNT_MAX_BIPS_POW2 / AMOUNT_WITH_FEE_BIPS_POW2;
-        const c = poolsRevOut[0] + poolsRevIn[1] * AMOUNT_MAX_BIPS / AMOUNT_WITH_FEE_BIPS;
+        const a = poolsRevOut[0].times(poolsRevOut[1]);
+        const b = poolsRevIn[0].times(poolsRevIn[1]).times(BN_AMOUNT_MAX_BIPS_POW2).div(BN_AMOUNT_WITH_FEE_BIPS_POW2);
+        const c = poolsRevOut[0].plus(poolsRevIn[1].times(BN_AMOUNT_MAX_BIPS).div(BN_AMOUNT_WITH_FEE_BIPS));
         //console.log({a: a, b: b})
-        if (a > b) {
-            const abSqrt = Math.sqrt(a * b);
+        if (a.isGreaterThan(b)) {
+            const abSqrt = (a.times(b)).sqrt();
             return {
-                optimalAmtIn: (abSqrt - b) / c,
-                idealProfit: (a + b - 2 * abSqrt) / c
+                optimalAmtIn: (abSqrt.minus(b)).div(c),
+                idealProfit: (a.plus(b).minus(abSqrt.times(2))).div(c)
             }
         } else {
             return null
         }
     }
 
-    private static checkForThreePoolsTrade(poolsRevIn: number[], poolsRevOut: number[])
-        : { optimalAmtIn: number, idealProfit: number } | null {
+    private static checkForThreePoolsTrade(poolsRevIn: BN[], poolsRevOut: BN[])
+        : { optimalAmtIn: BN, idealProfit: BN } | null {
         if (poolsRevIn.length !== 3 || poolsRevOut.length !== 3) {
             return null
         }
-        const a = poolsRevOut[0] * poolsRevOut[1] * poolsRevOut[2];
-        const b = poolsRevIn[0] * poolsRevIn[1] * poolsRevIn[2] * AMOUNT_MAX_BIPS_POW3 / AMOUNT_WITH_FEE_BIPS_POW3;
-        const c = poolsRevOut[0] * poolsRevOut[1] + poolsRevOut[0] * poolsRevIn[2] * AMOUNT_MAX_BIPS / AMOUNT_WITH_FEE_BIPS +
-            poolsRevIn[1] * poolsRevIn[2] * AMOUNT_MAX_BIPS_POW2 / AMOUNT_WITH_FEE_BIPS_POW2;
+        const a = poolsRevOut[0].times(poolsRevOut[1]).times(poolsRevOut[2]);
+        const b = poolsRevIn[0].times(poolsRevIn[1]).times(poolsRevIn[2])
+            .times(BN_AMOUNT_MAX_BIPS_POW3).div(BN_AMOUNT_WITH_FEE_BIPS_POW3);
+        const c = poolsRevOut[0].times(poolsRevOut[1])
+            .plus(poolsRevOut[0].times(poolsRevIn[2]).times(BN_AMOUNT_MAX_BIPS).div(BN_AMOUNT_WITH_FEE_BIPS))
+            .plus(poolsRevIn[1].times(poolsRevIn[2]).times(BN_AMOUNT_MAX_BIPS_POW2).div(BN_AMOUNT_WITH_FEE_BIPS_POW2));
         //console.log({a: a, b: b})
-        if (a > b) {
-            const abSqrt = Math.sqrt(a * b);
+        if (a.isGreaterThan(b)) {
+            const abSqrt = (a.times(b)).sqrt();
             return {
-                optimalAmtIn: (abSqrt - b) / c,
-                idealProfit: (a + b - 2 * abSqrt) / c
+                optimalAmtIn: (abSqrt.minus(b)).div(c),
+                idealProfit: (a.plus(b).minus(abSqrt.times(2))).div(c)
             }
         } else {
             return null
         }
     }
 
-    private static verifyK(amountIn: number, poolsRevIn: number[], poolsRevOut: number[]): boolean {
+    private static verifyK(amountIn: BN, poolsRevIn: BN[], poolsRevOut: BN[]): boolean {
         const poolsLength = poolsRevIn.length;
         let amtIn = amountIn;
         for (let i = 0; i < poolsLength; i++) {
             const amtOut = ArbitrageDetector.getAmountOut(amtIn, poolsRevIn[i], poolsRevOut[i]);
-            const poolRevInAfter = poolsRevIn[i] + AMOUNT_WITH_FEE_BIPS * amtIn / AMOUNT_MAX_BIPS;
-            const poolRevOutAfter = poolsRevOut[i] - amtOut;
-            if (poolRevInAfter * poolRevOutAfter < poolsRevIn[i] * poolsRevOut[i]) {
+            const poolRevInAfter = poolsRevIn[i].plus( amtIn.times(BN_AMOUNT_WITH_FEE_BIPS).div(BN_AMOUNT_MAX_BIPS));
+            const poolRevOutAfter = poolsRevOut[i].minus(amtOut);
+            if (poolRevInAfter.times(poolRevOutAfter).isLessThan(poolsRevIn[i].times( poolsRevOut[i]))) {
                 return false;
             }
             amtIn = amtOut;
@@ -170,10 +191,10 @@ export class ArbitrageDetector {
     }
 
     // calculation formula is from UniswapV2
-    private static getAmountOut(amountIn: number, poolRevIn: number, poolRevOut: number): number {
-        const amountInWithFee = amountIn * AMOUNT_WITH_FEE_BIPS;
-        const numerator = amountInWithFee * poolRevOut;
-        const denominator = poolRevIn * AMOUNT_MAX_BIPS + amountInWithFee;
-        return numerator / denominator;
+    private static getAmountOut(amountIn: BN, poolRevIn: BN, poolRevOut: BN): BN {
+        const amountInWithFee = amountIn.times(BN_AMOUNT_WITH_FEE_BIPS);
+        const numerator = amountInWithFee.times(poolRevOut);
+        const denominator = (poolRevIn.times(BN_AMOUNT_MAX_BIPS)).plus(amountInWithFee);
+        return numerator.div(denominator);
     }
 }

@@ -2,6 +2,7 @@ import Web3 from "web3";
 import {container} from "tsyringe";
 import {BaseResult} from "./common/base-result";
 import {DexArbitrage} from "./contracts/DexArbitrage";
+import BN from "bignumber.js";
 
 export class ArbitrageBot {
     private readonly _web3: Web3;
@@ -33,10 +34,10 @@ export class ArbitrageBot {
 
     tradeOnSingleRouter = (tradeId: string,
                            token: string,
-                           amount: number,
+                           amount: BN,
                            pairsRoute: string[],
                            router: string,
-                           minProfit: number,
+                           minProfit: BN,
                            validToBlockNumber: number) =>
         new Promise<BaseResult<string, { txProcessingError?: boolean, txSendingError?: boolean }>>(resolve => {
             return this._dexArbitrage
