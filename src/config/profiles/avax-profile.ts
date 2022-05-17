@@ -1,5 +1,11 @@
 import {ArbitrageProfile} from "../arbitrage-profile";
 
+const KNOWN_TOKENS = {
+    WAVAX: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    DAI_E: "0xba7deebbfc5fa1100fb055a87773e1e99cd3507a",
+    USDC: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
+}
+
 export const AvaxProfile: ArbitrageProfile = {
     DEXes: [
         {name: "TraderJoe", pairsDataFile: "JLP_pairs.json", router: "0x60aE616a2155Ee3d9A68541Ba4544862310933d4"},
@@ -10,20 +16,28 @@ export const AvaxProfile: ArbitrageProfile = {
     MaxBlocksOffsetFromSpotOut: 1,
 
     SeekingParams: [
-        {token: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", minProfit: 0.02 * 1e18},  // WAVAX
-        {token: "0xba7deebbfc5fa1100fb055a87773e1e99cd3507a", minProfit: 1e18},         // DAI.e
-        {token: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", minProfit: 1e6}           // USDC
+        {token: KNOWN_TOKENS.WAVAX, minProfit: 0.01 * 1e18},        // WAVAX
+        {token: KNOWN_TOKENS.DAI_E, minProfit: 0.5 * 1e18},         // DAI.e
+        {token: KNOWN_TOKENS.USDC, minProfit: 0.5 * 1e6}           // USDC
     ],
 
     ExcludedPairs: [],
 
     ExcludedTokens: [],
 
-    Bots: [],
+    Bots: [
+        {
+            jksFile: "0x1bcae667ad66c4f9d04971f84d062546ca5fa127.json",
+            supportedTokens: [
+                KNOWN_TOKENS.WAVAX,
+                KNOWN_TOKENS.USDC
+            ]
+        }
+    ],
 
     TxSendDefaultOptions: {
-        gasLimit: 0,
-        gasPrice: 0,
-        maxPriorityFeePerGas: 0
+        gasLimit: 1000000,
+        gasPrice: 50000000000,
+        maxPriorityFeePerGas: 5000000000
     }
 }

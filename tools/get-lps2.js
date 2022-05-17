@@ -4,23 +4,23 @@ const Web3 = require("web3");
 const Contracts = require("./contracts");
 const {ChainsConfig} = require("./def");
 
-const ChainConfig = ChainsConfig.Polygon;       // Change here for your target chain !!!
+const ChainConfig = ChainsConfig.Avax;       // TODO: Change here for your target chain !!!
 
 const web3 = new Web3(ChainConfig.RpcUrl);
 
-const FactoryAddress = ChainConfig.ContractAddresses.QuickSwapFactory;
+const FactoryAddress = ChainConfig.ContractAddresses.ElkDexFactory; // TODO: Change here for your desired AMM
 
 const factoryContract = new web3.eth.Contract(Contracts.AmmFactory.abi, FactoryAddress);
 
 const multicallContract = new web3.eth.Contract(Contracts.Multicall.abi, ChainConfig.ContractAddresses.Multicall);
 
 
-const PAIRS_FILE_PATH = path.join(__dirname, "output/polygon", "Quick_pairs.json");   // Change here for output file!!!
+const PAIRS_FILE_PATH = path.join(__dirname, "output/avax", "ELK_pairs.json");   // Change here for output file!!!
 
 
 const READ_PAIRS_FROM_INDEX = 0;              // TODO: please change on each call
 const READ_PAIRS_TOTAL_SIZE = 50000;         // TODO: please change on each call
-const READ_PAIRS_EACH_SIZE = 100;
+const READ_PAIRS_EACH_SIZE = 200;
 
 const EXCLUDED_PAIRS = [
 ].map(address => address.toLowerCase());

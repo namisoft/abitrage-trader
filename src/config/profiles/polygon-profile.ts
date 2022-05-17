@@ -25,7 +25,7 @@ export const PolygonProfile: ArbitrageProfile = {
     ],
 
     Bots: [
-        {jksFile: "/0x1bcae667ad66c4f9d04971f84d062546ca5fa127.json", supportedTokens: [KNOWN_TOKENS.WMATIC]}
+        {jksFile: "0x1bcae667ad66c4f9d04971f84d062546ca5fa127.json", supportedTokens: [KNOWN_TOKENS.WMATIC]}
     ],
 
     TxSendDefaultOptions: {

@@ -25,28 +25,28 @@ const Filters = {
 
     Avax: {
         MinPoolReserveRequired: new Map([
-            ["0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7".toLowerCase(), 90 * 1e18],            // WAVAX
-            ["0x60781C2586D68229fde47564546784ab3fACA982".toLowerCase(), 40000 * 1e18],         // PNG,
-            ["0x19860CCB0A68fd4213aB9D8266F7bBf05A8dDe98".toLowerCase(), 5000 * 1e18],          // BUSD.e
-            ["0xd586E7F844cEa2F87f50152665BCbc2C279D8d70".toLowerCase(), 5000 * 1e18],          // DAI.e
-            ["0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664".toLowerCase(), 5000 * 1e6],           // USDC.e
-            ["0xc7198437980c041c805A1EDcbA50c1Ce5db95118".toLowerCase(), 5000 * 1e6],           // USDT.e
-            ["0x50b7545627a5162F82A992c33b87aDc75187B218".toLowerCase(), 0.14 * 1e8],           // WBTC.e
-            ["0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB".toLowerCase(), 1.5 * 1e18],           // WETH.e
-            ["0xf20d962a6c8f70c731bd838a3a388D7d48fA6e15".toLowerCase(), 1.5 * 1e18],           // WETH
-            ["0x63a72806098Bd3D9520cC43356dD78afe5D386D9".toLowerCase(), 40 * 1e18],            // AAVE.e
-            ["0xbA7dEebBFC5fA1100Fb055a87773e1E99Cd3507a".toLowerCase(), 5000 * 1e18],          // DAI
+            ["0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7".toLowerCase(), 60 * 1e18],            // WAVAX
+            ["0x60781C2586D68229fde47564546784ab3fACA982".toLowerCase(), 30000 * 1e18],         // PNG,
+            ["0x19860CCB0A68fd4213aB9D8266F7bBf05A8dDe98".toLowerCase(), 3000 * 1e18],          // BUSD.e
+            ["0xd586E7F844cEa2F87f50152665BCbc2C279D8d70".toLowerCase(), 3000 * 1e18],          // DAI.e
+            ["0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664".toLowerCase(), 3000 * 1e6],           // USDC.e
+            ["0xc7198437980c041c805A1EDcbA50c1Ce5db95118".toLowerCase(), 3000 * 1e6],           // USDT.e
+            ["0x50b7545627a5162F82A992c33b87aDc75187B218".toLowerCase(), 0.1 * 1e8],           // WBTC.e
+            ["0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB".toLowerCase(), 1e18],                 // WETH.e
+            ["0xf20d962a6c8f70c731bd838a3a388D7d48fA6e15".toLowerCase(), 1e18],                 // WETH
+            ["0x63a72806098Bd3D9520cC43356dD78afe5D386D9".toLowerCase(), 30 * 1e18],            // AAVE.e
+            ["0xbA7dEebBFC5fA1100Fb055a87773e1E99Cd3507a".toLowerCase(), 3000 * 1e18],          // DAI
             ["0x408D4cD0ADb7ceBd1F1A1C33A0Ba2098E1295bAB".toLowerCase(), 0.14 * 1e8],           // WBTC
-            ["0x2147EFFF675e4A4eE1C2f918d181cDBd7a8E208f".toLowerCase(), 19000 * 1e18],         // ALPHA.e
-            ["0x5947BB275c521040051D82396192181b413227A3".toLowerCase(), 450 * 1e18],           // LINK.e
-            ["0xc7B5D72C836e718cDA8888eaf03707fAef675079".toLowerCase(), 9000 * 1e18],          // SWAP.e
-            ["0xde3A24028580884448a5397872046a019649b084".toLowerCase(), 5000 * 1e6],           // USDT
-            ["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E".toLowerCase(), 5000 * 1e6],           // USDC
-            ["0x130966628846BFd36ff31a822705796e8cb8C18D".toLowerCase(), 5000 * 1e18],          // MIM
-            ["0xce347E069B68C53A9ED5e7DA5952529cAF8ACCd4".toLowerCase(), 6000 * 1e18],          // JOE
-            ["0xE1C110E1B1b4A1deD0cAf3E42BfBdbB7b5d7cE1C".toLowerCase(), 5000 * 1e18],          // ELK
-            ["0x260Bbf5698121EB85e7a74f2E45E16Ce762EbE11".toLowerCase(), 5000 * 1e6],           // Wrapped UST
-            ["0xb599c3590F42f8F995ECfa0f85D2980B76862fc1".toLowerCase(), 5000 * 1e6]            // UST (wormhole)
+            ["0x2147EFFF675e4A4eE1C2f918d181cDBd7a8E208f".toLowerCase(), 15000 * 1e18],         // ALPHA.e
+            ["0x5947BB275c521040051D82396192181b413227A3".toLowerCase(), 300 * 1e18],           // LINK.e
+            ["0xc7B5D72C836e718cDA8888eaf03707fAef675079".toLowerCase(), 6000 * 1e18],          // SWAP.e
+            ["0xde3A24028580884448a5397872046a019649b084".toLowerCase(), 3000 * 1e6],           // USDT
+            ["0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E".toLowerCase(), 3000 * 1e6],           // USDC
+            ["0x130966628846BFd36ff31a822705796e8cb8C18D".toLowerCase(), 3000 * 1e18],          // MIM
+            ["0xce347E069B68C53A9ED5e7DA5952529cAF8ACCd4".toLowerCase(), 4000 * 1e18],          // JOE
+            ["0xE1C110E1B1b4A1deD0cAf3E42BfBdbB7b5d7cE1C".toLowerCase(), 3000 * 1e18],          // ELK
+            ["0x260Bbf5698121EB85e7a74f2E45E16Ce762EbE11".toLowerCase(), 30000 * 1e6],          // Wrapped UST
+            ["0xb599c3590F42f8F995ECfa0f85D2980B76862fc1".toLowerCase(), 30000 * 1e6]            // UST (wormhole)
             // 0x39cf1BD5f15fb22eC3D9Ff86b0727aFc203427cc: SUSHI token
         ])
     },

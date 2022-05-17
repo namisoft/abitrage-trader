@@ -5,15 +5,15 @@ const {ChainsConfig, Filters} = require("./def");
 
 const Web3 = require("web3");
 
-const ChainConfig = ChainsConfig.Polygon;       // Change here for your target chain !!!
-const Filter = Filters.Polygon;
+const ChainConfig = ChainsConfig.Avax;       // Change here for your target chain !!!
+const Filter = Filters.Avax;
 
 const web3 = new Web3(ChainConfig.RpcUrl);
 
 const multicallContract = new web3.eth.Contract(Contracts.Multicall.abi, ChainConfig.ContractAddresses.Multicall);
 
-const PAIR_SYMBOL = "Quick";          // change here to your desired value
-const CHAIN_SUB_DIR = "polygon";      // change here to your desired value
+const PAIR_SYMBOL = "ELK";          // change here to your desired value
+const CHAIN_SUB_DIR = "avax";      // change here to your desired value
 
 const PAIRS_INPUT_FILE_PATH = path.join(__dirname, `output/${CHAIN_SUB_DIR}`, `${PAIR_SYMBOL}_pairs.json`);
 
@@ -25,7 +25,7 @@ const L2PAIRS_FINAL_FILE_PATH = path.join(__dirname, `output/${CHAIN_SUB_DIR}`, 
 
 const L2PAIRS_INVALID_FILE_PATH = path.join(__dirname, `output/${CHAIN_SUB_DIR}`, `${PAIR_SYMBOL}_L2Pairs_invalid.json`);
 
-const MMR_ADJUSTMENT_FACTOR = 0.6;      // change it if you want to adjust the pool reserves min values
+const MMR_ADJUSTMENT_FACTOR = 0.8;      // change it if you want to adjust the pool reserves min values
 
 const KnownTokensMRR = new Map(Array.from(Filter.MinPoolReserveRequired, ([k,v]) => [k, MMR_ADJUSTMENT_FACTOR * v]));
 

@@ -5,3 +5,4 @@ node_modules
 /tools/output/__accounts/*
 /contracts/artifacts/*
 /logs/*
+/contracts/.deps/*

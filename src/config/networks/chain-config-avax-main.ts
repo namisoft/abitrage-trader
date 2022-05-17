@@ -8,7 +8,7 @@ export const ChainConfigAvaxMain: ChainConfig = {
     explorerUrl: "https://cchain.explorer.avax.network",
     contracts: {
         DexArbitrage: {
-            address: "0x9C97d84DC3ecB3adAcDa3c8DB3b68C41358Ea178",
+            address: "0x29EC5F2AeffB4290603bF3797C07738D19Db2289",
             abi: ABIs.DexArbitrage
         },
         Multicall: {

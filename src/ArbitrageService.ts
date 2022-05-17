@@ -71,12 +71,16 @@ export class ArbitrageService {
             const routes = ArbitrageService.buildCyclicRoutes(token, 3, pools);
             //console.log(JSON.stringify(routes));
             const routesWithInfo: Route[] = [];
+            let path3Numbers = 0;       // var for debugging
             for (const route of routes) {
                 const rWithInfo = route.map(address => {
                     const pool = pools.get(address);
                     return {address, token0: pool.token0, token1: pool.token1, router: pool.router}
                 })
                 routesWithInfo.push(rWithInfo);
+                if(rWithInfo.length === 3) {
+                    path3Numbers += 1;
+                }
             }
             this._tradesConfig.push({
                 token,
@@ -84,6 +88,8 @@ export class ArbitrageService {
                 minProfit: new BN(arbitrageInParam.minProfit)
             });
             this._botsForTokens.set(token, this.botManager.getTokenSupportedBots(token));
+            // Log some useful info
+            console.log(`Trade routes for ${token}: ${routesWithInfo.length} (3-pairs routes: ${path3Numbers})`);
         }
         //console.log(JSON.stringify(this._arbitrageInput));
     }
@@ -129,6 +135,8 @@ export class ArbitrageService {
         console.log(`Promising trades for ${token}: ${pickyTrades.length}, block=${checkResult.block}`);
 
         // we only take the best trades depending on the number of available bots for this input token.
+        // TODO: 1. Set timeout for TX and solve the issue the TX stuck by sending new TX with higher gas price
+        //       2. Use multiples bot capture the opportunities as much as possible
         const availableBots = this.botManager.getAvailableBotsFor(token);
         const tradesNum = Math.min(pickyTrades.length, availableBots.length);
         for (let i = 0; i < tradesNum; i++) {
