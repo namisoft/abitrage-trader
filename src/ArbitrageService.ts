@@ -98,7 +98,7 @@ export class ArbitrageService {
         const token = tradesConfig.token;
         // TODO: handle promise exception here?!
         const checkResult = await this._arbitrageDetector.checkForTradeOpportunities(tradesConfig);
-        const lastCheckedBlock = this._lastCheckedBlocks.get(token)
+        const lastCheckedBlock = this._lastCheckedBlocks.get(token);
         if (checkResult.block === lastCheckedBlock) {
             // skip
             return;
@@ -143,7 +143,6 @@ export class ArbitrageService {
             const bot = availableBots[i];
             const trade = pickyTrades[i];
             const tradeId = `${checkResult.block}#${i}`;
-            this.botManager.assignToTask(bot.address, tradeId);
             let isSingleRouterTrade = true;
             let router0 = trade.route[0].router;
             for (let k = 1; k < trade.route.length; k++) {
@@ -159,6 +158,7 @@ export class ArbitrageService {
                     token, optimalAmtIn: trade.optimalAmtIn.toString(10), 
                     idealProfit: trade.idealProfit.toString(10), route, router: router0 
                 })}`);
+                this.botManager.assignToTask(bot.address, tradeId);
                 bot.tradeOnSingleRouter(
                     tradeId,
                     token,
@@ -176,8 +176,28 @@ export class ArbitrageService {
                 })
             } else {
                 // construct input params, then call `multiples routers trade`
-                // TODO:
-                console.log('Multi routers trade: implement later');
+                const pairs = trade.route.map(v => v.pair);
+                const routers = trade.route.map(v => v.router);
+                console.log(`Assign bot ${bot.address} to multi-routers trade ${tradeId}: ${JSON.stringify({
+                    token, optimalAmtIn: trade.optimalAmtIn.toString(10),
+                    idealProfit: trade.idealProfit.toString(10), pairs, routers
+                })}`);
+                this.botManager.assignToTask(bot.address, tradeId);
+                bot.tradeOnMultiRouters(
+                    tradeId,
+                    token,
+                    trade.optimalAmtIn,
+                    pairs,
+                    routers,
+                    tradesConfig.minProfit,
+                    checkResult.block + this._arbitrageProfile.MaxBlocksOffsetFromSpotOut,
+                ).then(r => {
+                    console.log(`Trade ${tradeId} result: ${JSON.stringify(r)}`);
+                    this.botManager.releaseFromTask(bot.address);
+                }).catch(e => {
+                    console.error(`Trade ${tradeId} exception: ${JSON.stringify(e)}`);
+                    this.botManager.releaseFromTask(bot.address);
+                })
             }
         }
     }

@@ -16,7 +16,7 @@ export const AvaxProfile: ArbitrageProfile = {
     MaxBlocksOffsetFromSpotOut: 1,
 
     SeekingParams: [
-        {token: KNOWN_TOKENS.WAVAX, minProfit: 0.01 * 1e18},        // WAVAX
+        {token: KNOWN_TOKENS.WAVAX, minProfit: 0.006 * 1e18},        // WAVAX
         {token: KNOWN_TOKENS.DAI_E, minProfit: 0.5 * 1e18},         // DAI.e
         {token: KNOWN_TOKENS.USDC, minProfit: 0.5 * 1e6}           // USDC
     ],

@@ -63,7 +63,38 @@ export class ArbitrageBot {
                     console.error(`tradeOnSingleRouter ${tradeId} failed with exception: ${err.toString()}`);
                     resolve({error: {txSendingError: true}})
                 })
+        });
+
+    tradeOnMultiRouters = (tradeId: string,
+                           token: string,
+                           amount: BN,
+                           pairsRoute: string[],
+                           routers: string[],
+                           minProfit: BN,
+                           validToBlockNumber: number) =>
+        new Promise<BaseResult<string, { txProcessingError?: boolean, txSendingError?: boolean }>>(resolve => {
+            return this._dexArbitrage
+                .tradeOnMultiRouters(token, amount, pairsRoute, routers, minProfit, validToBlockNumber,
+                    this._txSendOptions
+                )
+                .then(r => {
+                    if (r.success) {
+                        // Tx success
+                        console.log(`tradeOnMultiRouters ${tradeId} success: block= ${r.receipt.blockNumber}, tx=${r.receipt.transactionHash}`);
+                        resolve({data: r.receipt.transactionHash})
+                    } else if (r.receipt) {
+                        // Tx processing failed
+                        console.error(`tradeOnMultiRouters ${tradeId} failed in tx processing: block=${r.receipt.blockNumber}, tx=${r.receipt.transactionHash}`);
+                        resolve({error: {txProcessingError: true}})
+                    } else {
+                        // Tx sending failed
+                        console.error(`tradeOnMultiRouters ${tradeId} failed in tx sending`);
+                        resolve({error: {txSendingError: true}})
+                    }
+                })
+                .catch(err => {
+                    console.error(`tradeOnMultiRouters ${tradeId} failed with exception: ${err.toString()}`);
+                    resolve({error: {txSendingError: true}})
+                })
         })
-
-
 }
